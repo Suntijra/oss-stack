@@ -1,1 +1,70 @@
-import { chromium } from 'playwright-extra';import { Page, Browser } from 'playwright';import { findConsentSelectors, findSearchSelectors } from './explorer/heuristics';import { generatePlaybook } from './explorer/generator';import { writeFileSync, mkdirSync } from 'fs';import { URL } from 'url';async function main() {  const args = process.argv.slice(2);  const urlArg = args.find(arg => arg.startsWith('--url='));  if (!urlArg) {    console.error('Error: Please provide a URL with --url=https://example.com');    process.exit(1);  }  const urlString = urlArg.split('=')[1];  if (!urlString) {    console.error('Error: The --url argument cannot be empty.');    process.exit(1);  }  let browser: Browser | null = null;  try {    const url = new URL(urlString);    console.log(`Starting Explorer Mode for: ${url.href}`);    browser = await chromium.launch({ headless: true });    const page = await browser.newPage();    await page.goto(url.href, { waitUntil: 'networkidle', timeout: 45000 });    console.log('Scanning for consent selectors...');    const consentSelectors = await findConsentSelectors(page);    console.log(`Found ${consentSelectors.length} potential consent selectors.`);    console.log('Scanning for search selectors...');    const searchSelectors = await findSearchSelectors(page);    console.log(`Found ${searchSelectors.length} potential search selectors.`);    console.log('Generating draft playbook...');    const playbookYaml = generatePlaybook(url, consentSelectors, searchSelectors);    const fileName = `draft-${url.hostname.replace(/www/g, '')}.yaml`;    const filePath = `playbooks/${fileName}`;    mkdirSync('playbooks', { recursive: true });    writeFileSync(filePath, playbookYaml);    console.log('\n----------------------------------------');    console.log('✨ Explorer Mode Finished! ✨');    console.log('\nDraft playbook created at: ${filePath}');    console.log('Please review the file and adjust selectors before use.');    console.log('----------------------------------------');  } catch (error) {    console.error('An error occurred during Explorer Mode:', error);    process.exit(1);  } finally {    if (browser) {      await browser.close();    }  }}main();
+import { chromium } from 'playwright-extra';
+import { Browser } from 'playwright';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import { scanSelectors } from './explorer/scanner';
+import { generatePlaybook } from './explorer/generator';
+import { writePlaybookFile } from './explorer/output';
+import { URL } from 'url';
+
+interface CliArgs {
+  url: string;
+}
+
+export function parseArgs(): CliArgs {
+  const argv = yargs(hideBin(process.argv))
+    .option('url', {
+      type: 'string',
+      demandOption: true,
+      describe: 'Target URL to explore',
+    })
+    .strict()
+    .help()
+    .parseSync();
+
+  return { url: argv.url as string };
+}
+
+export async function runExplorer(urlString: string): Promise<void> {
+  let browser: Browser | null = null;
+
+  try {
+    const url = new URL(urlString);
+    console.log(`Starting Explorer Mode for: ${url.href}`);
+
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.goto(url.href, { waitUntil: 'networkidle', timeout: 45000 });
+
+    const { consentSelectors, searchSelectors } = await scanSelectors(page);
+
+    console.log('Generating draft playbook...');
+    const playbookYaml = generatePlaybook(url, consentSelectors, searchSelectors);
+    const fileName = `draft-${url.hostname.replace(/ww/g, '')}.yaml`;
+    const filePath = `playbooks/${fileName}`;
+    await writePlaybookFile(filePath, playbookYaml);
+
+    console.log('\n----------------------------------------');
+    console.log('✨ Explorer Mode Finished! ✨');
+    console.log(`\nDraft playbook created at: ${filePath}`);
+    console.log('Please review the file and adjust selectors before use.');
+    console.log('----------------------------------------');
+  } catch (error) {
+    console.error('An error occurred during Explorer Mode:', error);
+    throw error;
+  } finally {
+    if (browser) {
+      try {
+        await browser.close();
+        console.log('Browser closed.');
+      } catch (closeError) {
+        console.error('Failed to close browser:', closeError);
+      }
+    }
+  }
+}
+
+if (require.main === module) {
+  const { url } = parseArgs();
+  runExplorer(url).catch(() => process.exit(1));
+}
