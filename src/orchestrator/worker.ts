@@ -28,6 +28,13 @@ async function executeAction(page: Page, action: Action): Promise<void> {
       const target = action.selector ? anyPage.locator(action.selector) : anyPage;
       await target.press(action.key);
       break;
+    case 'type':
+      await anyPage.locator(action.selector).type(action.text, {
+        delay: action.delay_ms_range
+          ? (action.delay_ms_range[0] + action.delay_ms_range[1]) / 2
+          : undefined,
+      });
+      break;
     case 'click':
       await human.click(anyPage, action.selector);
       break;

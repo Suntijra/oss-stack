@@ -11,6 +11,7 @@ export type FinishAction = { action: 'finish'; reason: string };
 export type Action =
   | GotoAction
   | WaitStableAction
+  | TypeAction
   | KeypressAction
   | HumanScrollAction
   | ClickAction
