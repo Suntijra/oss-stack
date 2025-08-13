@@ -1,8 +1,9 @@
 import * as dotenv from 'dotenv';
-import { runAgenticJob } from './orchestrator/worker';
 
 // Load environment variables from .env file
 dotenv.config();
+
+import { runAgenticJob } from './orchestrator/worker';
 
 // Main entry point for running an agentic job.
 async function main() {
