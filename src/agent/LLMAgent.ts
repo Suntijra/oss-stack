@@ -3,6 +3,7 @@
 // to decide the next best action to achieve a high-level goal.
 
 import { Page } from 'playwright';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Action } from '../types';
 
 // This is a placeholder for the detailed page state we'll send to the LLM.
@@ -14,7 +15,7 @@ type PageState = { html: string; url: string; };
  * This function will interact with the Gemini API.
  * 
  * @param goal The high-level user goal (e.g., "Find and record the video of Thailand vs China").
- * @param pageState The current state of the webpage.
+ * @param page The Playwright page instance representing current browser state.
  * @returns The next action to be executed by the worker.
  */
 export async function determineNextAction(goal: string, page: Page): Promise<Action> {
@@ -27,23 +28,32 @@ export async function determineNextAction(goal: string, page: Page): Promise<Act
   };
 
   // 2. Construct the prompt for the LLM
-  // The prompt would include the goal, the page state, and the list of available tools/actions.
-  const prompt = `Goal: ${goal}\nPage URL: ${pageState.url}\n\nWhat is the next logical action to take?`;
-  console.log(`Prompt sent to LLM (simulation): ${prompt.substring(0, 100)}...`);
+  const prompt = `You are a browser automation agent.\n` +
+    `Goal: ${goal}\nPage URL: ${pageState.url}\n` +
+    `HTML: ${pageState.html}\n\n` +
+    `Return the next action as JSON matching the Action type.`;
 
-  // 3. ** SIMULATED LLM API CALL **
-  // In a real implementation, this would be an API call to the Gemini model.
-  // For now, we will return a hardcoded action for demonstration purposes.
-  const llmResponse = {
-    thought: "The user wants to find a video. I should use the search bar. The search bar is likely the input element I see.",
-    action: {
-      action: 'finish',
-      reason: 'Simulated completion of the task.',
-    }
-  };
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not set');
+  }
 
-  console.log(`🤖 Agent's thought: ${llmResponse.thought}`);
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-  // 4. Parse the response and return the action
-  return llmResponse.action as Action;
+  try {
+    const result = await Promise.race([
+      model.generateContent(prompt),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('LLM call timed out')), 30000)),
+    ]);
+
+    const text = (result as any).response?.text?.();
+    console.log(`🤖 Agent raw output: ${text}`);
+
+    const action = JSON.parse(text) as Action;
+    return action;
+  } catch (err) {
+    console.error('Gemini API error', err);
+    return { action: 'finish', reason: `Failed to determine next action: ${(err as Error).message}` };
+  }
 }
