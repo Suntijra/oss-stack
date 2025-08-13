@@ -1,5 +1,5 @@
 import { Browser, BrowserContext } from 'playwright';
-import { readFileSync } from 'fs';
+import { access, readFile } from 'fs/promises';
 import * as yaml from 'yaml';
 import path from 'path';
 
@@ -8,8 +8,36 @@ export async function allocateSession(siteId: string) {
   console.log(`Allocating session for ${siteId}...`);
 
   // Load the playbook for the site
-  const playbookPath = path.join(__dirname, `../../playbooks/${siteId}.yaml`);
-  const playbook = yaml.parse(readFileSync(playbookPath, 'utf8'));
+  const playbookPath = path.join(
+    __dirname,
+    `../../playbooks/${siteId}.yaml`
+  );
+
+  try {
+    await access(playbookPath);
+  } catch {
+    throw new Error(
+      `Playbook not found for site ${siteId} at ${playbookPath}`
+    );
+  }
+
+  let playbookContent: string;
+  try {
+    playbookContent = await readFile(playbookPath, 'utf8');
+  } catch (err) {
+    throw new Error(
+      `Unable to read playbook for site ${siteId}: ${(err as Error).message}`
+    );
+  }
+
+  let playbook: any;
+  try {
+    playbook = yaml.parse(playbookContent);
+  } catch (err) {
+    throw new Error(
+      `Invalid YAML in playbook for site ${siteId}: ${(err as Error).message}`
+    );
+  }
 
   // In a real implementation, this would manage proxies, user agents, etc.
   const profile = {
