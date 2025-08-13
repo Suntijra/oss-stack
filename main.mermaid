@@ -1,0 +1,57 @@
+flowchart TD
+  A[รับงาน: target/site/query] --> B{มี Playbook
+สำหรับเว็บนี้หรือยัง?}
+  B -- Yes --> C[เตรียม Session Profile
+(Proxy, Locale, UA, Cookies)]
+  B -- No --> E[Explorer Mode (จำกัดสิทธิ)
+→ สแกน DOM → สร้าง Draft Playbook
+→ Human Review/อนุมัติ] --> C
+
+  C --> D[Launch Playwright (Headful)
++ Stealth + Randomized Viewport]
+  D --> F[เปิด Landing URL]
+  F --> G{Consent/Login?}
+  G -- Consent --> H[คลิก Accept Cookies
+(Human‑like path)] --> J
+  G -- Login --> I[พิมพ์ Username/Password
+แบบหน่วงเวลา + โฟกัส/Blur จริง]
+  I --> J
+  G -- None --> J[เข้าสู่หน้าค้นหา/หมวด]
+
+  J --> K[รอความนิ่ง CSR:
+NetworkIdle/DOM Stable/Mutation Quiet]
+  K --> L[เดิน Flow จาก Playbook:
+ค้นหา → คลิกการ์ดวิดีโอ
+(เมาส์เลื่อน/โฮเวอร์/คลิกเหมือนคน)]
+  L --> M{เจอโฆษณา?}
+  M -- Yes --> N[Skip Ads (ลำดับ):
+1) DOM selectors หลายภาษา
+2) Player Events (videojs/jwplayer)
+3) OCR/วิชั่นจากภาพหน้าจอ
+→ ยืนยันว่าเข้า Content]
+  M -- No --> P[เข้า Content ตรง]
+
+  N --> P
+
+  P --> Q[Snapshot เต็มหน้า (Full‑page)]
+  Q --> R{เลือกวิธีอัดหลังโฆษณา}
+  R -- MediaRecorder OK --> S[Inject MediaRecorder
+กับ <video>]
+  R -- CDP Screencast --> U[เริ่ม Tab Screencast]
+  R -- System FFmpeg --> V[อัดหน้าต่างเบราว์เซอร์
+(ครอปจาก bbox ของ <video>)]
+
+  S --> W[อัด N วินาที หรือจนเงื่อนไขจบ]
+  U --> W
+  V --> W
+
+  W --> X[หยุด/รวมไฟล์ →
+บันทึก artifacts]
+  X --> Y[อัปโหลด Storage +
+บันทึก Metadata/Telemetry]
+  Y --> Z[Cleanup: ปิด Browser
+คง Cookies ตามนโยบาย]
+  Z --> AA{สำเร็จ?}
+  AA -- No --> AB[Retry with Backoff,
+สลับ Proxy/Viewport/UA]
+  AA -- Yes --> AC[เสร็จงาน]

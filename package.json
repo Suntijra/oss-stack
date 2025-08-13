@@ -1,0 +1,36 @@
+{
+  "name": "video-navigator",
+  "version": "1.0.0",
+  "description": "A production-grade system to navigate to videos, skip ads, take snapshots, and record post-ad content.",
+  "main": "dist/main.js",
+  "scripts": {
+    "start": "ts-node src/main.ts",
+    "build": "tsc",
+    "explore": "ts-node src/explorer.ts",
+    "test": "jest"
+  },
+  "keywords": [
+    "playwright",
+    "crawlee",
+    "automation",
+    "scraping"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "crawlee": "^3.10.0",
+    "dotenv": "^17.2.1",
+    "playwright": "^1.45.0",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "tesseract.js": "^5.1.0",
+    "yaml": "^2.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
+    "@types/yaml": "^1.9.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

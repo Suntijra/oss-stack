@@ -1,0 +1,29 @@
+site_id: draft-dooball666.live
+host_patterns:
+  - dooball666.live
+  - www.dooball666.live
+locale: en-US
+anti_bot_profile:
+  consent_selectors: []
+flows:
+  search_and_open:
+    - action: goto
+      url: https://dooball666.live/
+    - action: wait_stable
+      min_ms: 1500
+ads:
+  skip_texts:
+    - Skip
+    - Skip Ad
+    - ข้าม
+    - ข้ามโฆษณา
+  dom_selectors:
+    - button:has-text('Skip')
+    - .ad-skip-button
+  ocr:
+    enabled: false
+    bbox: viewport
+recording:
+  prefer: mediarecorder
+  crop_strategy: video_bounding_box
+  duration_sec: 15

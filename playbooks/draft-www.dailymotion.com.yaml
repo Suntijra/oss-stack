@@ -1,0 +1,32 @@
+site_id: draft-www.dailymotion.com
+host_patterns:
+  - www.dailymotion.com
+  - www.www.dailymotion.com
+locale: en-US
+anti_bot_profile:
+  consent_selectors:
+    - .HomeVideoInfo__videoTitle___XZXQJ:has-text('OK')
+    - .FooterSecondaryList__cmpButton___njU7L:has-text('OK')
+    - .FooterLink__link___Ce_If:has-text('OK')
+    - button:has-text('OK')
+    - .HomeVideoInfo__videoTitle___XZXQJ:has-text('Allow')
+    - button:has-text('Allow')
+flows:
+  search_and_open:
+    - action: goto
+      url: https://www.dailymotion.com/
+    - action: wait_stable
+      min_ms: 1500
+ads:
+  skip_texts:
+    - Skip
+    - Skip Ad
+    - ข้าม
+    - ข้ามโฆษณา
+  dom_selectors:
+    - button:has-text('Skip')
+    - .ad-skip-button
+recording:
+  prefer: mediarecorder
+  crop_strategy: video_bounding_box
+  duration_sec: 15

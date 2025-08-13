@@ -1,0 +1,32 @@
+site_id: example_csr
+host_patterns: ["example.com", "www.example.com"]
+locale: th-TH
+anti_bot_profile:
+  consent_selectors: ["button:has-text('Accept')", "#onetrust-accept-btn-handler"]
+  login:
+    url: "https://example.com/login"
+    user_selector: "input[name=username]"
+    pass_selector: "input[name=password]"
+    submit_selector: "button[type=submit]"
+flows:
+  search_and_open:
+    - action: goto
+      url: "https://example.com"
+    - action: wait_stable
+      min_ms: 1200
+ads:
+  skip_texts: ["Skip", "Skip Ad", "ข้าม", "ข้ามโฆษณา", "広告をスキップ"]
+  dom_selectors:
+    - "button:has-text('Skip')"
+    - "[role=button]:has-text('ข้าม')"
+    - ".jw-skip,.vjs-skip"
+  player_events:
+    videojs: ["adend", "adcomplete"]
+    jwplayer: ["adComplete", "adSkipped"]
+  ocr:
+    enabled: true
+    bbox: "viewport"  # ถ่ายเฉพาะ viewport เพื่อ OCR
+recording:
+  prefer: mediarecorder  # fallback: screencast, ffmpeg
+  crop_strategy: video_bounding_box
+  duration_sec: 30
